@@ -1,0 +1,42 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+docs/
+specs/
+
+# Tests
+tests/
+test/
+*_test.exs
+*_test.py
+
+# Build artifacts
+_build/
+deps/
+*.beam
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv
+
+# Environment
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+

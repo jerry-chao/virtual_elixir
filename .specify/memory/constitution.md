@@ -1,50 +1,143 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+S Y N C  I M P A C T  R E P O R T
+
+Version Change: N/A → 1.0.0 (initial creation)
+Project: Virtual Elixir (Elixir & Python)
+
+Modified Principles: N/A (all new)
+
+Added Sections:
+  - Core Principles (5 principles)
+  - Language-Specific Standards
+  - Quality Gates & Standards
+  - Development Workflow
+
+Removed Sections: N/A
+
+Templates Status:
+  ✅ .specify/templates/plan-template.md - Constitution Check section aligns with all principles
+  ✅ .specify/templates/spec-template.md - Independent testability requirement aligns with Test-First principle
+  ✅ .specify/templates/tasks-template.md - Task organization by user story aligns with MVP-First principle
+  
+Follow-up TODOs: N/A
+-->
+
+# Virtual Elixir Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Test-First Development (NON-NEGOTIABLE)
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+Every feature MUST be developed using Test-Driven Development (TDD): Tests written → Approved → Tests fail → Then implement → Refactor.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+- **Elixir**: Use ExUnit for tests, write `@tag :integration` for integration tests
+- **Python**: Use pytest for tests, write fixtures for shared test setup
+- Red-Green-Refactor cycle is strictly enforced - no implementation without failing tests first
+- Tests MUST be independent and runnable in any order
+- Code coverage MUST be maintained above 80% for new features
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+**Rationale**: TDD ensures code correctness, facilitates refactoring, and provides living documentation. Both Elixir and Python have mature testing frameworks that make TDD natural.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### II. MVP-First Development
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+Every feature starts with the smallest independently testable implementation that delivers user value.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+- User stories MUST be prioritized (P1, P2, P3) where P1 = MVP-critical
+- Each user story MUST be independently implementable, testable, and deployable
+- Stop and validate after each user story completes before proceeding
+- Avoid features that cannot be independently demonstrated to users
+- Document why each story has its priority level
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+**Rationale**: Incremental delivery reduces risk, enables faster feedback loops, and ensures each deliverable provides measurable value. This applies to both Elixir applications (Supervisor trees, GenServers) and Python APIs/services.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### III. Immutability & Functional Core
+
+Prefer immutable data structures and pure functions. Mutable state MUST be isolated and justified.
+
+- **Elixir**: Leverage immutability by default, use `GenServer` for state management when needed
+- **Python**: Use dataclasses/frozen classes, type hints with `@final`, minimize global state
+- Pure functions preferred over stateful operations
+- Side effects (IO, database, network) MUST be isolated at system boundaries
+- Document any exceptions to immutability with clear rationale
+
+**Rationale**: Immutability reduces bugs, enables concurrency safety, and makes code predictable. Both languages support this pattern effectively.
+
+### IV. Observable & Debuggable
+
+All code MUST be debuggable in production with structured logging and metrics.
+
+- **Elixir**: Use structured logging with metadata, implement telemetry events, expose Ecto query logs in development
+- **Python**: Use structured logging (JSON format), implement application metrics, use debugger-friendly exception handling
+- Log at appropriate levels (debug, info, warn, error) with context
+- Include request IDs in logs for tracing
+- Ensure deployment environment has proper monitoring and alerting
+
+**Rationale**: Production issues require visibility. Both Elixir and Python have excellent observability tools (Telemetry/Logger for Elixir, Python logging/metrics libraries).
+
+### V. Documentation as Code
+
+Documentation MUST be co-located with code, kept current, and executable.
+
+- **Elixir**: Use `@doc` attributes for function/module documentation, keep doctests passing
+- **Python**: Use docstrings (Google or NumPy style), include type hints, keep examples in docstrings executable
+- API endpoints MUST document request/response schemas and error cases
+- README files MUST include quickstart examples that actually work
+- Update documentation in the same commit as code changes
+
+**Rationale**: Co-located documentation stays relevant and executable documentation prevents rot. Both languages have tools (ExDoc, Sphinx) that generate docs from code.
+
+## Language-Specific Standards
+
+### Elixir Development
+
+- **Dependencies**: Manage via `mix.exs`, pin exact versions in `mix.lock`
+- **Testing**: ExUnit for all tests, use `@moduletag` for test organization
+- **Documentation**: ExDoc for generated docs, `@doc` attributes required for public functions
+- **Code Style**: Follow community standards (mix format), use pipeline operator (`|>`)
+- **Error Handling**: Use `{:ok, result}` / `{:error, reason}` tuples, pattern match errors
+- **Concurrency**: Use Supervisor trees for fault tolerance, GenServer for state, Task for parallel operations
+
+### Python Development
+
+- **Dependencies**: Manage via `requirements.txt` or `pyproject.toml`, use virtual environments
+- **Testing**: pytest for all tests, use fixtures for shared setup, parametrize similar tests
+- **Documentation**: Google-style or NumPy-style docstrings, include type hints
+- **Code Style**: Follow PEP 8, use `black` for formatting, `mypy` for type checking
+- **Error Handling**: Use exceptions appropriately, create custom exception classes for domains
+- **Type Safety**: Use type hints for public APIs, enable mypy strict mode
+
+## Quality Gates & Standards
+
+Every commit MUST pass these gates before merging:
+
+- [ ] All tests pass (unit, integration, contract)
+- [ ] Code coverage maintained above 80%
+- [ ] Linting passes (Credo for Elixir, ruff/flake8 for Python)
+- [ ] Formatting applied (mix format for Elixir, black/isort for Python)
+- [ ] Type checking passes (mypy for Python if applicable)
+- [ ] Documentation updated and accurate
+- [ ] No obvious performance regressions
+- [ ] Security vulnerabilities scanned and addressed
+
+**Violations**: If a gate fails, explain the violation and get explicit approval before proceeding. Constitution violations require documentation of why simpler alternatives were rejected.
+
+## Development Workflow
+
+1. **Understand**: Study existing patterns in codebase, find 3 similar implementations
+2. **Test**: Write test first (red phase)
+3. **Implement**: Minimal code to pass (green phase)
+4. **Refactor**: Clean up with tests passing
+5. **Document**: Update documentation in same commit
+6. **Commit**: Clear commit message linking to plan/user story
+
+Stop after 3 failed attempts and reassess approach. Document what was tried, why it failed, research alternatives, question fundamentals, try different angle.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+- Constitution supersedes all other development practices
+- All PRs/reviews MUST verify constitution compliance
+- Amendments to this constitution require documentation, approval, and migration plan
+- Use `.specify/templates/` for planning and documentation workflows
+- Complexity violations MUST be justified in plan documents
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2025-01-15 | **Last Amended**: 2025-01-15

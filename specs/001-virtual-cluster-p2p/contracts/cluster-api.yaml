@@ -1,0 +1,413 @@
+openapi: 3.0.3
+info:
+  title: Virtual P2P Service Cluster API
+  version: 1.0.0
+  description: |
+    REST API for managing a distributed virtual service cluster across multiple physical machines.
+    Supports cluster membership, service deployment, health monitoring, and P2P connectivity.
+
+servers:
+  - url: https://{cluster}.virtual-cluster.local
+    description: Primary cluster endpoint
+
+paths:
+  /api/v1/cluster/status:
+    get:
+      summary: Get cluster status
+      operationId: getClusterStatus
+      tags: [Cluster]
+      responses:
+        '200':
+          description: Cluster status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: "home-office-cluster"
+                  name:
+                    type: string
+                    example: "Home Office Cluster"
+                  status:
+                    type: string
+                    enum: [initializing, active, degraded, failed]
+                  node_count:
+                    type: integer
+                    minimum: 3
+                    maximum: 10
+                  node_count:
+                    type: integer
+                  service_count:
+                    type: integer
+                  created_at:
+                    type: string
+                    format: date-time
+
+  /api/v1/cluster/nodes:
+    get:
+      summary: List all nodes in cluster
+      operationId: listNodes
+      tags: [Cluster]
+      responses:
+        '200':
+          description: List of nodes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nodes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Node'
+    post:
+      summary: Add a new node to cluster
+      operationId: addNode
+      tags: [Cluster]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+                  description: Authentication token for cluster membership
+                hostname:
+                  type: string
+                  example: "office-machine-01"
+      responses:
+        '201':
+          description: Node added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Node'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Cluster at maximum capacity (10 nodes)
+
+  /api/v1/services:
+    get:
+      summary: List all services
+      operationId: listServices
+      tags: [Services]
+      responses:
+        '200':
+          description: List of services
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  services:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Service'
+    
+    post:
+      summary: Deploy a new service
+      operationId: deployService
+      tags: [Services]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceDeployRequest'
+      responses:
+        '201':
+          description: Service deployed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '507':
+          description: Insufficient cluster resources
+
+  /api/v1/services/{serviceId}:
+    get:
+      summary: Get service details
+      operationId: getService
+      tags: [Services]
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Service details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+        '404':
+          description: Service not found
+    delete:
+      summary: Stop and remove a service
+      operationId: deleteService
+      tags: [Services]
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Service removed successfully
+        '404':
+          description: Service not found
+        '409':
+          description: Service is currently migrating
+
+  /api/v1/services/{serviceId}/logs:
+    get:
+      summary: Get service logs
+      operationId: getServiceLogs
+      tags: [Services]
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tail
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          description: Service logs
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: Service not found
+
+  /api/v1/services/{serviceId}/instances:
+    get:
+      summary: Get service instances (deployments across nodes)
+      operationId: getServiceInstances
+      tags: [Services]
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of service instances
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  instances:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ServiceInstance'
+
+  /api/v1/tokens:
+    post:
+      summary: Create a new access token
+      operationId: createToken
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, scope]
+              properties:
+                type:
+                  type: string
+                  enum: [machine, user, service]
+                scope:
+                  type: string
+                  description: Access scope (e.g., "service:nginx:read")
+                expires_in:
+                  type: integer
+                  description: Token expiration in seconds
+                  default: 86400
+      responses:
+        '201':
+          description: Token created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  expires_at:
+                    type: string
+                    format: date-time
+
+components:
+  schemas:
+    Node:
+      type: object
+      properties:
+        id:
+          type: string
+        hostname:
+          type: string
+        ip_address:
+          type: string
+        location:
+          type: string
+          enum: [home, office, other]
+        status:
+          type: string
+          enum: [online, offline, unreachable]
+        resources:
+          type: object
+          properties:
+            cpu_cores:
+              type: integer
+            cpu_available:
+              type: number
+            memory_total:
+              type: integer
+            memory_available:
+              type: integer
+            disk_total:
+              type: integer
+            disk_available:
+              type: integer
+        joined_at:
+          type: string
+          format: date-time
+        last_heartbeat:
+          type: string
+          format: date-time
+
+    Service:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        image:
+          type: string
+          example: "nginx:latest"
+        status:
+          type: string
+          enum: [deploying, running, stopped, failed, migrating]
+        created_at:
+          type: string
+          format: date-time
+        resource_requirements:
+          type: object
+          properties:
+            cpu_request:
+              type: number
+            memory_request:
+              type: integer
+            disk_request:
+              type: integer
+        exposed_ports:
+          type: array
+          items:
+            type: integer
+
+    ServiceDeployRequest:
+      type: object
+      required: [name, image]
+      properties:
+        name:
+          type: string
+        image:
+          type: string
+        replicas:
+          type: integer
+          default: 1
+        resource_requirements:
+          type: object
+          properties:
+            cpu_request:
+              type: number
+            memory_request:
+              type: integer
+            disk_request:
+              type: integer
+        environment:
+          type: object
+          additionalProperties:
+            type: string
+        exposed_ports:
+          type: array
+          items:
+            type: integer
+
+    ServiceInstance:
+      type: object
+      properties:
+        id:
+          type: string
+        service_id:
+          type: string
+        node_id:
+          type: string
+        container_id:
+          type: string
+        status:
+          type: string
+          enum: [starting, running, stopping, stopped, failed]
+        health:
+          type: string
+          enum: [healthy, unhealthy, unknown]
+        started_at:
+          type: string
+          format: date-time
+        health_check_last_success:
+          type: string
+          format: date-time
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Invalid service configuration"
+
+    Unauthorized:
+      description: Unauthorized - invalid or missing token
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Invalid authentication token"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - bearerAuth: []
+

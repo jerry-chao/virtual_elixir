@@ -1,0 +1,85 @@
+# Elixir build artifacts
+/_build/
+/deps/
+/cover/
+/doc/
+*.beam
+*.ez
+
+# Elixir configuration
+.elixir_ls/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+pip-log.txt
+pip-delete-this-directory.txt
+.venv
+venv/
+ENV/
+env/
+.env
+.venv
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+tmp/
+temp/
+
+# Cluster data
+/var/lib/virtual-cluster/
+/tmp/virtual-cluster/
+
+# Docker
+*.log
+
+# Test artifacts
+/test-results/
+.coverage
+htmlcov/
+
+# Dialyzer
+.plt/
+priv/plts/*.plt
+
+# Documentation
+docs/_build/
+
+# Credo
+.credo_cache/
+

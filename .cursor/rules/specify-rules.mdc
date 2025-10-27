@@ -1,0 +1,29 @@
+# virtual_elixir Development Guidelines
+
+Auto-generated from all feature plans. Last updated: 2025-10-27
+
+## Active Technologies
+
+- (001-virtual-cluster-p2p)
+
+## Project Structure
+
+```text
+src/
+tests/
+```
+
+## Commands
+
+# Add commands for 
+
+## Code Style
+
+: Follow standard conventions
+
+## Recent Changes
+
+- 001-virtual-cluster-p2p: Added
+
+<!-- MANUAL ADDITIONS START -->
+<!-- MANUAL ADDITIONS END -->
